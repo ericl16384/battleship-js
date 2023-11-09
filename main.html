@@ -10,6 +10,10 @@
             .border {
                 border: 3px solid #555;
             }
+
+            text {
+                user-select: none;
+            }
         </style>
 
 	</head>
@@ -42,6 +46,23 @@
 
 
 var mainSVG = document.getElementById("main-svg");
+
+
+const tileSize = 40;
+const gridOffset = 75;
+
+const textOffset = gridOffset - tileSize/8;
+const fontSize = tileSize / 2;
+
+const letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
+
+const pegEmptyR = tileSize/20;
+const pegHitR = tileSize/4;
+const pegMissR = tileSize/4;
+
+const pegEmptyColor = "black";
+const pegHitColor = "red";
+const pegMissColor = "darkgrey";
 
 
 
@@ -156,7 +177,12 @@ function test() {
 
 }
 
-function initTile(element) {
+function getTileDescriptor(x, y) {
+    return letters[y] + (x+1)
+}
+
+function initTile(element, x, y) {
+    element.setAttribute("id", "tile-" + getTileDescriptor(x, y));
 
     function handleMouseOver() {
         element.setAttribute("fill", "lightblue");
@@ -165,7 +191,21 @@ function initTile(element) {
         element.setAttribute("fill", "white");
     }
     function handleClick() {
-        element.setAttribute("fill", "red")
+        element.setAttribute("fill", "grey");
+
+        var outcome = handleShotFired(x, y);
+
+        console.log(outcome);
+
+        var peg = document.getElementById("peg-" + getTileDescriptor(x, y));
+
+        if(outcome == "hit") {
+            peg.setAttribute("r", pegHitR);
+            peg.setAttribute("fill", pegHitColor);
+        } else {
+            peg.setAttribute("r", pegMissR);
+            peg.setAttribute("fill", pegMissColor);
+        }
     }
 
     element.addEventListener("mouseover", handleMouseOver);
@@ -174,15 +214,51 @@ function initTile(element) {
     
 }
 
+function initPeg(element, x, y) {
+    element.setAttribute("id", "peg-" + getTileDescriptor(x, y));
+}
+
+
+
+
+// instead of [x][y] it is [x+y*10]
+var shipMap = [];
+var shotMap = [];
+
+// values are empty and ship
+for(let i=0; i<100; i++) {
+    shipMap.push("empty");
+}
+
+// example ship (debug)
+shipMap[42] = "ship";
+shipMap[43] = "ship";
+shipMap[44] = "ship";
+shipMap[45] = "ship";
+
+// values are unknown, hit, and miss
+for(let i=0; i<100; i++) {
+    shotMap.push("unknown");
+}
+
+function handleShotFired(x, y) {
+    var outcome = "miss";
+    if(shipMap[x+y*10] == "ship") {
+        outcome = "hit"
+    }
+    shotMap[x+y*10] = outcome;
+    return outcome;
+}
+
+function handleMapClick() {
+
+}
+
+
+
 
 
 function drawMap() {
-
-    const tileSize = 40;
-    const gridOffset = 75;
-
-    const textOffset = gridOffset - tileSize/8;
-    const fontSize = tileSize / 2;
 
     for(var x=0; x<10; x++) {
         let rx = x*tileSize + gridOffset
@@ -195,13 +271,13 @@ function drawMap() {
             let cy = ry + tileSize/2
 
             let tile = drawRect(rx, ry, tileSize, tileSize, "white", "black", 1);
-            drawCircle(cx, cy, tileSize/20);
+            let peg = drawCircle(cx, cy, pegEmptyR, pegEmptyColor);
 
-            initTile(tile);
+            initTile(tile, x, y);
+            initPeg(peg, x, y);
         }
     }
 
-    const letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
     for(let y=0; y<10; y++) {
         let ry = y*tileSize + gridOffset
         let cy = ry + tileSize/2
