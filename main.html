@@ -51,6 +51,12 @@
 
 var mainSVG = document.getElementById("main-svg");
 
+function clearMainSVG() {
+    while (mainSVG.firstChild) {
+        mainSVG.removeChild(mainSVG.firstChild);
+    }
+}
+
 
 const tileSize = 40;
 const gridOffset = 75;
@@ -60,13 +66,18 @@ const fontSize = tileSize / 2;
 
 const letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 
+
+const tileStandardColor = "lightblue";
+const tileSelectedColor = "darkblue";
+
+
 const pegEmptyR = tileSize/20;
 const pegHitR = tileSize/4;
 const pegMissR = tileSize/4;
 
 const pegEmptyColor = "black";
 const pegHitColor = "red";
-const pegMissColor = "darkgrey";
+const pegMissColor = "white";
 
 
 
@@ -170,25 +181,19 @@ function initTile(element, x, y) {
     element.setAttribute("id", "tile-" + getTileDescriptor(x, y));
 
     function handleMouseOver() {
-        element.setAttribute("fill", "lightblue");
+        element.setAttribute("fill", tileSelectedColor);
     }
     function handleMouseOut() {
-        element.setAttribute("fill", "white");
+        element.setAttribute("fill", tileStandardColor);
     }
     function handleClick() {
-        element.setAttribute("fill", "grey");
+        // element.setAttribute("fill", "grey");
 
         var outcome = handleShotFired(x, y);
 
         var peg = document.getElementById("peg-" + getTileDescriptor(x, y));
 
-        if(outcome == "hit") {
-            peg.setAttribute("r", pegHitR);
-            peg.setAttribute("fill", pegHitColor);
-        } else {
-            peg.setAttribute("r", pegMissR);
-            peg.setAttribute("fill", pegMissColor);
-        }
+        updatePeg(peg, x, y);
     }
 
     element.addEventListener("mouseover", handleMouseOver);
@@ -201,6 +206,21 @@ function initPeg(element, x, y) {
     element.setAttribute("id", "peg-" + getTileDescriptor(x, y));
 
     nullSelect(element);
+}
+
+function updatePeg(element, x, y) {
+    var status = shotMap[x+y*10];
+
+    if(status == "hit") {
+        element.setAttribute("r", pegHitR);
+        element.setAttribute("fill", pegHitColor);
+    } else if(status == "miss") {
+        element.setAttribute("r", pegMissR);
+        element.setAttribute("fill", pegMissColor);
+    } else {
+        element.setAttribute("r", pegEmptyR);
+        element.setAttribute("fill", pegEmptyColor);
+    }
 }
 
 
@@ -250,13 +270,15 @@ class Ship {
     }
 
     draw() {
+        var margin = tileSize*0.1;
+        
         var w = this.length;
         var h = this.length;
 
         if(!this.dx()) { w = 1; }
         if(!this.dy()) { h = 1; }
 
-        nullSelect(drawEllipse(tileToPixel(this.cx()+0.5), tileToPixel(this.cy()+0.5), w*tileSize/2, h*tileSize/2, "rgba(0, 0, 0, 0)", "blue"));
+        nullSelect(drawEllipse(tileToPixel(this.cx()+0.5), tileToPixel(this.cy()+0.5), w*tileSize/2-margin, h*tileSize/2-margin, "darkgrey")); //, "rgba(0, 0, 0, 0)", "blue"));
     }
 
     addToShipMap() {
@@ -286,19 +308,22 @@ for(let i=0; i<100; i++) {
 
         let valid = true;
         s.points().forEach(p => {
-            let c = p[0]+p[1]*10;
-            if(c < 0 || c >= 10) {
+            if(p[0] < 0 || p[0] >= 10 || p[1] < 0 || p[1] >= 10 || shipMap[x+y*10] == "ship") {
                 valid = false;
                 return;
             }
         });
+        if(!valid) { continue; }
 
-        if(valid) {
-            ships.push(s);
-            s.addToShipMap();
-            console.log("added " + l);
-            break;
-        }
+        
+        s.points().forEach(p => {
+            console.log(x, y, shipMap[x+y*10]);
+        });
+
+        ships.push(s);
+        s.addToShipMap();
+        // console.log(x, y);
+        break;
     }
 });
 
@@ -330,6 +355,8 @@ function tileToPixel(xOrY) {
 
 function drawMap() {
 
+    // text and tiles
+
     for(var x=0; x<10; x++) {
         let rx = tileToPixel(x);
         let cx = rx + tileSize/2;
@@ -340,10 +367,31 @@ function drawMap() {
             let ry = tileToPixel(y);
             let cy = ry + tileSize/2;
 
-            let tile = drawRect(rx, ry, tileSize, tileSize, "white", "black", 1);
-            let peg = drawCircle(cx, cy, pegEmptyR, pegEmptyColor);
-
+            let tile = drawRect(rx, ry, tileSize, tileSize, tileStandardColor, "black", 1);
             initTile(tile, x, y);
+        }
+    }
+
+
+    // ships
+    
+    ships.forEach(s => {
+        s.draw();
+        console.log(s.points());
+    })
+
+
+    // pegs
+
+    for(var x=0; x<10; x++) {
+        let rx = tileToPixel(x);
+        let cx = rx + tileSize/2;
+
+        for(let y=0; y<10; y++) {
+            let ry = tileToPixel(y);
+            let cy = ry + tileSize/2;
+
+            let peg = drawCircle(cx, cy, pegEmptyR, pegEmptyColor);
             initPeg(peg, x, y);
         }
     }
@@ -359,14 +407,6 @@ function drawMap() {
 drawMap();
 
 
-// ships[0].draw();
-ships.forEach(s => {
-    s.draw();
-    console.log(s.points());
-})
-
-
-// 183.log(ships[0].points());
 
 
 
@@ -383,6 +423,10 @@ function test() {
     const para = document.createElement("p");
     para.innerText = "This is a paragraph";
     document.body.appendChild(para);
+
+
+    clearMainSVG();
+    drawMap();
 
 
 
