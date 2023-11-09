@@ -298,17 +298,22 @@ var shotMap = [];
 for(let i=0; i<100; i++) {
     shipMap.push("empty");
 }
-[5, 4, 4, 3, 2].forEach(l => {
-    while(true) {
-        let x = Math.floor(Math.random() * 10);
-        let y = Math.floor(Math.random() * 10);
-        let r = Math.floor(Math.random() * 4)
 
-        let s = new Ship(l, x, y, r);
+
+const shipLengths = [5, 4, 4, 3, 2];
+
+function newRandomShip(length) {
+    for(let test=0; test<1000; test++) {
+        let startX = Math.floor(Math.random() * 10);
+        let startY = Math.floor(Math.random() * 10);
+        let rotation = Math.floor(Math.random() * 4)
+
+        let s = new Ship(length, startX, startY, rotation);
 
         let valid = true;
         s.points().forEach(p => {
-            if(p[0] < 0 || p[0] >= 10 || p[1] < 0 || p[1] >= 10 || shipMap[x+y*10] == "ship") {
+            var [x, y] = p;
+            if(x < 0 || x >= 10 || y < 0 || y >= 10 || shipMap[x+y*10] == "ship") {
                 valid = false;
                 return;
             }
@@ -316,16 +321,29 @@ for(let i=0; i<100; i++) {
         if(!valid) { continue; }
 
         
-        s.points().forEach(p => {
-            console.log(x, y, shipMap[x+y*10]);
-        });
+        // console.log("before");
+        // s.points().forEach(p => {
+        //     console.log(x, y, shipMap[x+y*10]);
+        // });
 
         ships.push(s);
         s.addToShipMap();
         // console.log(x, y);
-        break;
+        
+        // console.log("after");
+        // s.points().forEach(p => {
+        //     console.log(x, y, shipMap[x+y*10]);
+        // });
+
+        return true;
     }
+    return false;
+}
+
+shipLengths.forEach(length => {
+    newRandomShip(length);
 });
+
 
 // values are unknown, hit, and miss
 for(let i=0; i<100; i++) {
@@ -367,7 +385,20 @@ function drawMap() {
             let ry = tileToPixel(y);
             let cy = ry + tileSize/2;
 
-            let tile = drawRect(rx, ry, tileSize, tileSize, tileStandardColor, "black", 1);
+            // let tile = drawRect(rx, ry, tileSize, tileSize, tileStandardColor, "black", 1);
+
+
+
+
+            if(shipMap[x+y*10] == "ship") {
+                var tile = drawRect(rx, ry, tileSize, tileSize, tileSelectedColor, "black", 1);
+            } else {
+                var tile = drawRect(rx, ry, tileSize, tileSize, tileStandardColor, "black", 1);
+            }
+
+
+
+
             initTile(tile, x, y);
         }
     }
@@ -377,7 +408,6 @@ function drawMap() {
     
     ships.forEach(s => {
         s.draw();
-        console.log(s.points());
     })
 
 
@@ -424,6 +454,9 @@ function test() {
     para.innerText = "This is a paragraph";
     document.body.appendChild(para);
 
+
+
+    newRandomShip(8);
 
     clearMainSVG();
     drawMap();
