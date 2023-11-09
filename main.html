@@ -161,53 +161,6 @@ function nullSelect(element) {
 
 
 
-function test() {
-    
-    
-    const para = document.createElement("p");
-    para.innerText = "This is a paragraph";
-    document.body.appendChild(para);
-
-
-
-    // // var mainSVG = document.getElementById("main-svg");
-    // // // mainSVG.innerHTML = "Hello World!";
-
-    // var x = 250;
-    // var y = 300;
-    // var r = 30;
-    // var stroke = "green";
-    // var strokeWidth = 4;
-    // var fill = "blue";
-
-    // var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    // circle.setAttributeNS(null, "cx", x);
-    // circle.setAttributeNS(null, "cy", y);
-    // circle.setAttributeNS(null, "r", r)
-    // circle.setAttributeNS(null, "stroke", stroke);
-    // circle.setAttributeNS(null, "stroke-width", strokeWidth);
-    // circle.setAttributeNS(null, "fill", fill);
-    // mainSVG.appendChild(circle);
-
-    // // document.getElementById("main-svg").appendChild(circle);
-
-    // var c = document.getElementById("cir");
-
-
-
-
-    // c.setAttributeNS(null, "cx", Number(c.getAttributeNS(null, "cx")) + 50);
-
-    // console.log(c)
-    // console.log(circle)
-
-    // console.log(mainSVG)
-    
-    // mainSVG.appendChild(circle);
-
-    // console.log(mainSVG)
-
-}
 
 function getTileDescriptor(x, y) {
     return letters[y] + (x+1)
@@ -226,8 +179,6 @@ function initTile(element, x, y) {
         element.setAttribute("fill", "grey");
 
         var outcome = handleShotFired(x, y);
-
-        console.log(outcome);
 
         var peg = document.getElementById("peg-" + getTileDescriptor(x, y));
 
@@ -266,30 +217,56 @@ class Ship {
         this.rotation = rotation;
     }
 
-    points() {
-        var dx = [
+    dx() {
+        return [
             1, 0, -1, 0
         ][this.rotation];
-        var dy = [
+    }
+    dy() {
+        return [
             0, 1, 0, -1
         ][this.rotation];
+    }
 
+    cx() {
+        return this.x + (this.length-1)*this.dx()/2;
+    }
+    cy() {
+        return this.y + (this.length-1)*this.dy()/2;
+    }
+
+    points() {
         var x = this.x;
         var y = this.y;
 
         var p = [];
-        for(let i=0; i<=this.length; i++) {
+        for(let i=0; i<this.length; i++) {
             p.push([x, y]);
 
-            x += dx;
-            y += dy;
+            x += this.dx();
+            y += this.dy();
         }
         return p;
     }
+
+    draw() {
+        var w = this.length;
+        var h = this.length;
+
+        if(!this.dx()) { w = 1; }
+        if(!this.dy()) { h = 1; }
+
+        nullSelect(drawEllipse(tileToPixel(this.cx()+0.5), tileToPixel(this.cy()+0.5), w*tileSize/2, h*tileSize/2, "rgba(0, 0, 0, 0)", "blue"));
+    }
+
+    addToShipMap() {
+        this.points().forEach(p => {
+            shipMap[p[0]+p[1]*10] = "ship";
+        });
+    }
 }
-var ships = [
-    new Ship(4, 4, 3, 0)
-];
+var ships = [];
+
 
 // instead of [x][y] it is [x+y*10]
 var shipMap = [];
@@ -299,12 +276,31 @@ var shotMap = [];
 for(let i=0; i<100; i++) {
     shipMap.push("empty");
 }
+[5, 4, 4, 3, 2].forEach(l => {
+    while(true) {
+        let x = Math.floor(Math.random() * 10);
+        let y = Math.floor(Math.random() * 10);
+        let r = Math.floor(Math.random() * 4)
 
-// example ship (debug)
-shipMap[42] = "ship";
-shipMap[43] = "ship";
-shipMap[44] = "ship";
-shipMap[45] = "ship";
+        let s = new Ship(l, x, y, r);
+
+        let valid = true;
+        s.points().forEach(p => {
+            let c = p[0]+p[1]*10;
+            if(c < 0 || c >= 10) {
+                valid = false;
+                return;
+            }
+        });
+
+        if(valid) {
+            ships.push(s);
+            s.addToShipMap();
+            console.log("added " + l);
+            break;
+        }
+    }
+});
 
 // values are unknown, hit, and miss
 for(let i=0; i<100; i++) {
@@ -363,15 +359,71 @@ function drawMap() {
 drawMap();
 
 
+// ships[0].draw();
+ships.forEach(s => {
+    s.draw();
+    console.log(s.points());
+})
+
+
+// 183.log(ships[0].points());
 
 
 
-console.log(ships[0].points());
-
-nullSelect(drawEllipse(tileToPixel(4), tileToPixel(4.5), tileSize*2, tileSize/2, "rgba(0, 0, 0, 0)", "blue"));
 
 
 
+function test() {
+
+
+
+    // ships[0].rotation = (ships[0].rotation + 1) % 4
+    
+    
+    const para = document.createElement("p");
+    para.innerText = "This is a paragraph";
+    document.body.appendChild(para);
+
+
+
+    // // var mainSVG = document.getElementById("main-svg");
+    // // // mainSVG.innerHTML = "Hello World!";
+
+    // var x = 250;
+    // var y = 300;
+    // var r = 30;
+    // var stroke = "green";
+    // var strokeWidth = 4;
+    // var fill = "blue";
+
+    // var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    // circle.setAttributeNS(null, "cx", x);
+    // circle.setAttributeNS(null, "cy", y);
+    // circle.setAttributeNS(null, "r", r)
+    // circle.setAttributeNS(null, "stroke", stroke);
+    // circle.setAttributeNS(null, "stroke-width", strokeWidth);
+    // circle.setAttributeNS(null, "fill", fill);
+    // mainSVG.appendChild(circle);
+
+    // // document.getElementById("main-svg").appendChild(circle);
+
+    // var c = document.getElementById("cir");
+
+
+
+
+    // c.setAttributeNS(null, "cx", Number(c.getAttributeNS(null, "cx")) + 50);
+
+    // console.log(c)
+    // console.log(circle)
+
+    // console.log(mainSVG)
+    
+    // mainSVG.appendChild(circle);
+
+    // console.log(mainSVG)
+
+}
 
 
     </script>
