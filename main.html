@@ -16,6 +16,9 @@
 
 	<body>
 
+
+        <h1>Battleship implemented by Eric Lewis</h1>
+
         <!-- <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> -->
 
         
@@ -25,6 +28,8 @@
             <!-- <circle id="cir" cx="200" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow"></circle>
 
             <circle id="cir2" cx="200" cy="50" r="20" stroke="black" stroke-width="2" fill="red"></circle> -->
+
+            <!-- <text x="50" y="50" text-anchor="middle">hello world!</text> -->
 
 
         </svg>
@@ -41,40 +46,64 @@ var mainSVG = document.getElementById("main-svg");
 
 
 function drawCircle(cx, cy, r, fill, stroke, strokeWidth) {
-    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    circle.setAttribute("cx", cx);
-    circle.setAttribute("cy", cy);
-    circle.setAttribute("r", r);
+    const element = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    element.setAttribute("cx", cx);
+    element.setAttribute("cy", cy);
+    element.setAttribute("r", r);
 
     if(fill) {
-        circle.setAttribute("fill", fill);
+        element.setAttribute("fill", fill);
     }
     if(stroke) {
-        circle.setAttribute("stroke", stroke);
+        element.setAttribute("stroke", stroke);
     }
     if(strokeWidth) {
-        circle.setAttribute("stroke-width", strokeWidth);
+        element.setAttribute("stroke-width", strokeWidth);
     }
-    mainSVG.appendChild(circle);
+    mainSVG.appendChild(element);
+    return element;
 }
 
 function drawRect(x, y, w, h, fill, stroke, strokeWidth) {
-    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    rect.setAttribute("x", x);         // x-coordinate of the top-left corner
-    rect.setAttribute("y", y);         // y-coordinate of the top-left corner
-    rect.setAttribute("width", w); // width
-    rect.setAttribute("height", h); // height
+    const element = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    element.setAttribute("x", x);
+    element.setAttribute("y", y);
+    element.setAttribute("width", w);
+    element.setAttribute("height", h);
 
     if(fill) {
-        rect.setAttribute("fill", fill);
+        element.setAttribute("fill", fill);
     }
     if(stroke) {
-        rect.setAttribute("stroke", stroke);
+        element.setAttribute("stroke", stroke);
     }
     if(strokeWidth) {
-        rect.setAttribute("stroke-width", strokeWidth);
+        element.setAttribute("stroke-width", strokeWidth);
     }
-    mainSVG.appendChild(rect);
+    mainSVG.appendChild(element);
+    return element;
+}
+
+function drawText(text, x, y, alignH, alignV) {
+    const element = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    element.setAttribute("x", x);
+    element.setAttribute("y", y);
+
+    element.textContent = text;
+
+    if(alignH) {
+        if(alignH == "left") {
+            alignH = "start";
+        } else if(alignH == "right") {
+            alignH = "end";
+        }
+        element.setAttribute("text-anchor", alignH);
+    }
+    if(alignV) {
+        element.setAttribute("dominant-baseline", alignV);
+    }
+    mainSVG.appendChild(element);
+    return element;
 }
 
 
@@ -82,9 +111,9 @@ function drawRect(x, y, w, h, fill, stroke, strokeWidth) {
 function test() {
     
     
-    // const para = document.createElement("p");
-    // para.innerText = "This is a paragraph";
-    // document.body.appendChild(para);
+    const para = document.createElement("p");
+    para.innerText = "This is a paragraph";
+    document.body.appendChild(para);
 
 
 
@@ -127,22 +156,37 @@ function test() {
 
 }
 
+
+
 function drawMap() {
 
     const tileSize = 40;
     const gridOffset = 75;
 
-    for(var x=0; x<10; x++) {
-        for(let y=0; y<10; y++) {
-            let rx = x*tileSize + gridOffset
-            let cx = rx + tileSize/2
+    const textOffset = gridOffset - tileSize/8;
+    const fontSize = tileSize / 2;
 
+    for(var x=0; x<10; x++) {
+        let rx = x*tileSize + gridOffset
+        let cx = rx + tileSize/2
+
+        drawText(x+1, cx, textOffset, "middle").setAttribute("font-size", fontSize);
+
+        for(let y=0; y<10; y++) {
             let ry = y*tileSize + gridOffset
             let cy = ry + tileSize/2
 
             drawRect(rx, ry, tileSize, tileSize, "white", "black", 1);
-            drawCircle(cx, cy, 3);
+            drawCircle(cx, cy, tileSize/20);
         }
+    }
+
+    const letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
+    for(let y=0; y<10; y++) {
+        let ry = y*tileSize + gridOffset
+        let cy = ry + tileSize/2
+
+        drawText(letters[y], textOffset, cy, "right", "middle").setAttribute("font-size", fontSize);
     }
 
 }
@@ -151,6 +195,8 @@ drawMap();
     </script>
 
     <br/>
+    <br/>
     <button onclick="test()">test</button>
+    <div>hello world</div> <div>testing</div>
 </html>
 
