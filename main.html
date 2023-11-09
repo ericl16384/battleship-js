@@ -21,9 +21,10 @@
         
 
         <svg id="main-svg" width="500" height="500" class="border">
-            <circle id="cir" cx="200" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow"></circle>
 
-            <circle id="cir2" cx="200" cy="50" r="20" stroke="black" stroke-width="2" fill="red"></circle>
+            <!-- <circle id="cir" cx="200" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow"></circle>
+
+            <circle id="cir2" cx="200" cy="50" r="20" stroke="black" stroke-width="2" fill="red"></circle> -->
 
 
         </svg>
@@ -38,11 +39,13 @@
 var mainSVG = document.getElementById("main-svg");
 
 
-function drawNewCircle(cx, cy, r, fill, stroke, strokeWidth) {
+
+function drawCircle(cx, cy, r, fill, stroke, strokeWidth) {
     const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     circle.setAttribute("cx", cx);
     circle.setAttribute("cy", cy);
     circle.setAttribute("r", r);
+
     if(fill) {
         circle.setAttribute("fill", fill);
     }
@@ -55,59 +58,95 @@ function drawNewCircle(cx, cy, r, fill, stroke, strokeWidth) {
     mainSVG.appendChild(circle);
 }
 
+function drawRect(x, y, w, h, fill, stroke, strokeWidth) {
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", x);         // x-coordinate of the top-left corner
+    rect.setAttribute("y", y);         // y-coordinate of the top-left corner
+    rect.setAttribute("width", w); // width
+    rect.setAttribute("height", h); // height
+
+    if(fill) {
+        rect.setAttribute("fill", fill);
+    }
+    if(stroke) {
+        rect.setAttribute("stroke", stroke);
+    }
+    if(strokeWidth) {
+        rect.setAttribute("stroke-width", strokeWidth);
+    }
+    mainSVG.appendChild(rect);
+}
+
 
 
 function test() {
     
     
-    const para = document.createElement("p");
-    para.innerText = "This is a paragraph";
-    document.body.appendChild(para);
+    // const para = document.createElement("p");
+    // para.innerText = "This is a paragraph";
+    // document.body.appendChild(para);
 
 
 
-    // var mainSVG = document.getElementById("main-svg");
-    // // mainSVG.innerHTML = "Hello World!";
+    // // var mainSVG = document.getElementById("main-svg");
+    // // // mainSVG.innerHTML = "Hello World!";
 
-    var x = 250;
-    var y = 300;
-    var r = 30;
-    var stroke = "green";
-    var strokeWidth = 4;
-    var fill = "blue";
+    // var x = 250;
+    // var y = 300;
+    // var r = 30;
+    // var stroke = "green";
+    // var strokeWidth = 4;
+    // var fill = "blue";
 
-    var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    circle.setAttributeNS(null, "cx", x);
-    circle.setAttributeNS(null, "cy", y);
-    circle.setAttributeNS(null, "r", r)
-    circle.setAttributeNS(null, "stroke", stroke);
-    circle.setAttributeNS(null, "stroke-width", strokeWidth);
-    circle.setAttributeNS(null, "fill", fill);
-    mainSVG.appendChild(circle);
+    // var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    // circle.setAttributeNS(null, "cx", x);
+    // circle.setAttributeNS(null, "cy", y);
+    // circle.setAttributeNS(null, "r", r)
+    // circle.setAttributeNS(null, "stroke", stroke);
+    // circle.setAttributeNS(null, "stroke-width", strokeWidth);
+    // circle.setAttributeNS(null, "fill", fill);
+    // mainSVG.appendChild(circle);
 
-    // document.getElementById("main-svg").appendChild(circle);
+    // // document.getElementById("main-svg").appendChild(circle);
 
-    var c = document.getElementById("cir");
-
-
+    // var c = document.getElementById("cir");
 
 
-    c.setAttributeNS(null, "cx", Number(c.getAttributeNS(null, "cx")) + 50);
 
-    console.log(c)
-    console.log(circle)
 
-    console.log(mainSVG)
+    // c.setAttributeNS(null, "cx", Number(c.getAttributeNS(null, "cx")) + 50);
+
+    // console.log(c)
+    // console.log(circle)
+
+    // console.log(mainSVG)
     
-    mainSVG.appendChild(circle);
+    // mainSVG.appendChild(circle);
 
-    console.log(mainSVG)
-
-
-
-    drawNewCircle(100, 100, 10)
+    // console.log(mainSVG)
 
 }
+
+function drawMap() {
+
+    const tileSize = 40;
+    const gridOffset = 75;
+
+    for(var x=0; x<10; x++) {
+        for(let y=0; y<10; y++) {
+            let rx = x*tileSize + gridOffset
+            let cx = rx + tileSize/2
+
+            let ry = y*tileSize + gridOffset
+            let cy = ry + tileSize/2
+
+            drawRect(rx, ry, tileSize, tileSize, "white", "black", 1);
+            drawCircle(cx, cy, 3);
+        }
+    }
+
+}
+drawMap();
 
     </script>
 
