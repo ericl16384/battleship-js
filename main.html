@@ -49,6 +49,9 @@
 "use strict";
 
 
+const shipLengths = [5, 4, 4, 3, 2];
+
+
 var mainSVG = document.getElementById("main-svg");
 
 function clearMainSVG() {
@@ -196,6 +199,10 @@ function initTile(element, x, y) {
         var peg = document.getElementById("peg-" + getTileDescriptor(x, y));
 
         updatePeg(peg, x, y);
+
+        clearHologramShips();
+        addHologramShips();
+        drawMap();
     }
 
     element.addEventListener("mouseover", handleMouseOver);
@@ -282,12 +289,18 @@ class Ship {
         if(!this.dx()) { w = 1; }
         if(!this.dy()) { h = 1; }
 
+        var fill = "rgba(0, 0, 0, 0)";
+        var stroke = null;
         if(this.isHologram) {
-            var fill = "rgba(0, 0, 255, 0.1)";
-            var stroke = "blue";
+            if(showPossibilities) {
+                var fill = "rgba(0, 255, 0, 0.01)";
+                var stroke = "rgba(0, 255, 0, 0.1)";
+            }
         } else {
-            var fill = "darkgrey";
-            var stroke = null;
+            if(showShips) {
+                var fill = "darkgrey";
+                var stroke = null;
+            }
         }
 
         nullSelect(drawEllipse(tileToPixel(this.cx()+0.5), tileToPixel(this.cy()+0.5), w*tileSize/2-margin, h*tileSize/2-margin, fill, stroke));
@@ -299,11 +312,15 @@ class Ship {
         });
     }
 
-    canPlaceOnMap(map) {
+    canPlaceOnMap(map, validTiles) {
+        if(validTiles == null) {
+            validTiles = ["empty"];
+        }
+
         var valid = true;
         this.points().forEach(p => {
             var [x, y] = p;
-            if(x < 0 || x >= 10 || y < 0 || y >= 10 || map[x+y*10] != "empty") {
+            if(x < 0 || x >= 10 || y < 0 || y >= 10 || !validTiles.includes(map[x+y*10])) {
                 valid = false;
                 return;
             }
@@ -323,8 +340,12 @@ for(let i=0; i<100; i++) {
     shipMap.push("empty");
 }
 
+// values are empty, hit, and miss
+for(let i=0; i<100; i++) {
+    shotMap.push("empty");
+}
 
-const shipLengths = [5, 4, 4, 3, 2];
+
 
 function newRandomShip(length) {
     for(let test=0; test<1000; test++) {
@@ -349,10 +370,9 @@ shipLengths.forEach(length => {
 });
 
 
-// values are empty, hit, and miss
-for(let i=0; i<100; i++) {
-    shotMap.push("empty");
-}
+
+
+
 
 function handleShotFired(x, y) {
     var outcome = "miss";
@@ -361,10 +381,6 @@ function handleShotFired(x, y) {
     }
     shotMap[x+y*10] = outcome;
     return outcome;
-}
-
-function handleMapClick() {
-
 }
 
 
@@ -433,11 +449,41 @@ function drawMap() {
         }
     }
 }
-drawMap();
+
+
+function addHologramShips() {
+    for(var x=0; x<10; x++) {
+        for(var y=0; y<10; y++) {
+            for(var r=0; r<2; r++) {
+                shipLengths.forEach(length => {
+                    var ship = new Ship(length, x, y, r);
+                    if(!ship.canPlaceOnMap(shotMap, ["empty", "hit"])) { return; }
+                    ship.isHologram = true;
+                    ships.push(ship);
+                });
+            }
+        }
+    }
+}
+
+function clearHologramShips() {
+    for(var i=ships.length-1; i>=0; i--) {
+        if(ships[i].isHologram) {
+            ships.splice(i, 1);
+        }
+    }
+}
+
+
+function refreshMap() {
+    clearHologramShips();
+    addHologramShips();
+    drawMap();
+}
 
 
 
-
+refreshMap();
 
 
 
@@ -455,19 +501,12 @@ function test() {
 
 
 
-    newRandomShip(7);
+    // newRandomShip(7);
 
-    for(var x=0; x<10; x++) {
-        for(var y=0; y<10; y++) {
-            for(var r=0; r<2; r++) {
-                
-                // s = new Ship()
-                // .canPlaceOnShipMap()
-            }
-        }
-    }
+    // addHologramShips(shipMap);
 
-    drawMap();
+
+    refreshMap();
 
 
 
@@ -511,10 +550,21 @@ function test() {
 }
 
 
+
+var showShips = false;
+var showPossibilities = false;
+
+
+
+
     </script>
 
     <br/>
-    <br/>
+
+    <button onclick="showShips = !showShips; refreshMap()">DEBUG show ships</button><br/>
+    <button onclick="showPossibilities = !showPossibilities; refreshMap()">show possibilities</button>
+
+    <br/><br/>
     <button onclick="test()">test</button>
     <div>hello world</div> <div>testing</div>
 </html>
