@@ -74,10 +74,12 @@ const tileSelectedColor = "darkblue";
 const pegEmptyR = tileSize/20;
 const pegHitR = tileSize/4;
 const pegMissR = tileSize/4;
+const pegRLookup = {"hit": pegHitR, "miss": pegMissR, "empty": pegEmptyR};
 
 const pegEmptyColor = "black";
 const pegHitColor = "red";
 const pegMissColor = "white";
+const pegColorLookup = {"hit": pegHitColor, "miss": pegMissColor, "empty": pegEmptyColor};
 
 
 
@@ -235,6 +237,8 @@ class Ship {
         this.x = x;
         this.y = y;
         this.rotation = rotation;
+
+        this.isHologram = false;
     }
 
     dx() {
@@ -278,13 +282,33 @@ class Ship {
         if(!this.dx()) { w = 1; }
         if(!this.dy()) { h = 1; }
 
-        nullSelect(drawEllipse(tileToPixel(this.cx()+0.5), tileToPixel(this.cy()+0.5), w*tileSize/2-margin, h*tileSize/2-margin, "darkgrey")); //, "rgba(0, 0, 0, 0)", "blue"));
+        if(this.isHologram) {
+            var fill = "rgba(0, 0, 255, 0.1)";
+            var stroke = "blue";
+        } else {
+            var fill = "darkgrey";
+            var stroke = null;
+        }
+
+        nullSelect(drawEllipse(tileToPixel(this.cx()+0.5), tileToPixel(this.cy()+0.5), w*tileSize/2-margin, h*tileSize/2-margin, fill, stroke));
     }
 
-    addToShipMap() {
+    addToMap(map) {
         this.points().forEach(p => {
-            shipMap[p[0]+p[1]*10] = "ship";
+            map[p[0]+p[1]*10] = "ship";
         });
+    }
+
+    canPlaceOnMap(map) {
+        var valid = true;
+        this.points().forEach(p => {
+            var [x, y] = p;
+            if(x < 0 || x >= 10 || y < 0 || y >= 10 || map[x+y*10] != "empty") {
+                valid = false;
+                return;
+            }
+        });
+        return valid;
     }
 }
 var ships = [];
@@ -310,30 +334,10 @@ function newRandomShip(length) {
 
         let s = new Ship(length, startX, startY, rotation);
 
-        let valid = true;
-        s.points().forEach(p => {
-            var [x, y] = p;
-            if(x < 0 || x >= 10 || y < 0 || y >= 10 || shipMap[x+y*10] == "ship") {
-                valid = false;
-                return;
-            }
-        });
-        if(!valid) { continue; }
-
-        
-        // console.log("before");
-        // s.points().forEach(p => {
-        //     console.log(x, y, shipMap[x+y*10]);
-        // });
+        if(!s.canPlaceOnMap(shipMap)) { continue; }
 
         ships.push(s);
-        s.addToShipMap();
-        // console.log(x, y);
-        
-        // console.log("after");
-        // s.points().forEach(p => {
-        //     console.log(x, y, shipMap[x+y*10]);
-        // });
+        s.addToMap(shipMap);
 
         return true;
     }
@@ -345,9 +349,9 @@ shipLengths.forEach(length => {
 });
 
 
-// values are unknown, hit, and miss
+// values are empty, hit, and miss
 for(let i=0; i<100; i++) {
-    shotMap.push("unknown");
+    shotMap.push("empty");
 }
 
 function handleShotFired(x, y) {
@@ -372,6 +376,8 @@ function tileToPixel(xOrY) {
 
 
 function drawMap() {
+    clearMainSVG();
+
 
     // text and tiles
 
@@ -385,22 +391,21 @@ function drawMap() {
             let ry = tileToPixel(y);
             let cy = ry + tileSize/2;
 
-            // let tile = drawRect(rx, ry, tileSize, tileSize, tileStandardColor, "black", 1);
-
-
-
-
-            if(shipMap[x+y*10] == "ship") {
+            if(false && shipMap[x+y*10] == "ship") {
                 var tile = drawRect(rx, ry, tileSize, tileSize, tileSelectedColor, "black", 1);
             } else {
                 var tile = drawRect(rx, ry, tileSize, tileSize, tileStandardColor, "black", 1);
             }
 
-
-
-
             initTile(tile, x, y);
         }
+    }
+    
+    for(let y=0; y<10; y++) {
+        let ry = y*tileSize + gridOffset
+        let cy = ry + tileSize/2
+
+        drawText(letters[y], textOffset, cy, "right", "middle").setAttribute("font-size", fontSize, "black");
     }
 
 
@@ -421,18 +426,12 @@ function drawMap() {
             let ry = tileToPixel(y);
             let cy = ry + tileSize/2;
 
-            let peg = drawCircle(cx, cy, pegEmptyR, pegEmptyColor);
+            var v = shotMap[x+y*10];
+
+            let peg = drawCircle(cx, cy, pegRLookup[v], pegColorLookup[v]);
             initPeg(peg, x, y);
         }
     }
-
-    for(let y=0; y<10; y++) {
-        let ry = y*tileSize + gridOffset
-        let cy = ry + tileSize/2
-
-        drawText(letters[y], textOffset, cy, "right", "middle").setAttribute("font-size", fontSize, "black");
-    }
-
 }
 drawMap();
 
@@ -456,9 +455,18 @@ function test() {
 
 
 
-    newRandomShip(8);
+    newRandomShip(7);
 
-    clearMainSVG();
+    for(var x=0; x<10; x++) {
+        for(var y=0; y<10; y++) {
+            for(var r=0; r<2; r++) {
+                
+                // s = new Ship()
+                // .canPlaceOnShipMap()
+            }
+        }
+    }
+
     drawMap();
 
 
