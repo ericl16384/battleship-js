@@ -442,6 +442,21 @@ function handleShotFired(x, y) {
 }
 
 
+
+function isVictory() {
+    var win = true;
+    ships.forEach(s => {
+        if(!s.isHologram && !s.isDestroyed()) {
+            win = false;
+        }
+    });
+    return win;
+}
+
+
+
+
+
 function addHologramShips() {
     for(var x=0; x<10; x++) {
         for(var y=0; y<10; y++) {
@@ -484,7 +499,7 @@ function getFreqMap() {
         var hitMultiplier = 1;
         points.forEach(p => {
             if(shotMap[pToI(p)] == "hit") {
-                hitMultiplier *= 10;
+                hitMultiplier *= 100;
             }
 
             if(destroyedMap[pToI(p)] == "destroyed") {
@@ -498,6 +513,26 @@ function getFreqMap() {
     })
 
     return freqMap;
+}
+
+function getPredictions() {
+    var freqMap = getFreqMap();
+
+    var highestFreq = 0;
+    for(let i=0; i<100; i++) {
+        if(freqMap[i] > highestFreq && shotMap[i] != "hit") {
+            highestFreq = freqMap[i];
+        }
+    }
+
+    var best = [];
+    for(let i=0; i<100; i++) {
+        if(freqMap[i] == highestFreq) {
+            best.push(i);
+        }
+    }
+
+    return best;
 }
 
 
@@ -577,30 +612,38 @@ function drawMap() {
     // frequency map
 
     if(showFrequency) {
-
-        var freqMap = getFreqMap();
-
-        var highestFreq = 0;
-        for(let i=0; i<100; i++) {
-            if(freqMap[i] > highestFreq && shotMap[i] != "hit") {
-                highestFreq = freqMap[i];
-            }
-        }
-
-        for(let i=0; i<100; i++) {
+        getPredictions().forEach(i => {
             var x = i % 10;
             var y = Math.floor(i / 10);
 
             x = tileToPixel(x);
             y = tileToPixel(y);
 
-            if(freqMap[i] == highestFreq) {
-                nullSelect(drawCircle(x + tileSize/2, y + tileSize/2, tileSize/2, "rgba(0, 0, 0, 0)", "red", tileSize/10));
-            }
-
-            nullSelect(drawText(freqMap[i], x, y + tileSize/4, "left", "center"));
-        }
+            nullSelect(drawCircle(x + tileSize/2, y + tileSize/2, tileSize/2, "rgba(0, 0, 0, 0)", "red", tileSize/10));
+        });
     }
+}
+
+
+function drawVictoryPopup() {
+    var w = mainSVG.getAttribute("width");
+    var h = mainSVG.getAttribute("height");
+
+    var cx = w/2;
+    var cy = h/2;
+
+    var sizeX = 400;
+    var sizeY = 200;
+
+    var moves = 0;
+    shotMap.forEach(t => {
+        if(t != "empty") {
+            moves++;
+        }
+    });
+
+    drawRect(cx-sizeX/2, cy-sizeY/2, sizeX, sizeY, "lightgrey", "black", 3);
+    drawText("You won in " + moves + " moves!", cx, cy, "center", "center");
 }
 
 
@@ -608,6 +651,10 @@ function refreshMap() {
     clearHologramShips();
     addHologramShips();
     drawMap();
+
+    if(isVictory()) {
+        drawVictoryPopup();
+    }
 }
 
 
@@ -691,11 +738,11 @@ var showFrequency = false;
 
     <br/>
 
-    <button onclick="showFrequency = !showFrequency; refreshMap()">show tile value</button>
-    <button onclick="showPossibilities = !showPossibilities; refreshMap()">show possibilities</button>
+    <button onclick="showFrequency = !showFrequency; refreshMap()">show best move guess</button><br/>
 
-    <br/><br/>
+    <br/>
     <button onclick="showShips = !showShips; refreshMap()">DEBUG show ships</button><br/>
+    <button onclick="showPossibilities = !showPossibilities; refreshMap()">DEBUG show possible ship positions</button><br/>
 
     <br/>
     <button onclick="test()">test</button>
