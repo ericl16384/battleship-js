@@ -157,10 +157,15 @@ function drawText(text, x, y, alignH, alignV, fill) {
             alignH = "start";
         } else if(alignH == "right") {
             alignH = "end";
+        } else if(alignH == "center") {
+            alignH = "middle";
         }
         element.setAttribute("text-anchor", alignH);
     }
     if(alignV) {
+        if(alignV == "center") {
+            alignV = "middle";
+        }
         element.setAttribute("dominant-baseline", alignV);
     }
     if(fill) {
@@ -200,9 +205,7 @@ function initTile(element, x, y) {
 
         updatePeg(peg, x, y);
 
-        clearHologramShips();
-        addHologramShips();
-        drawMap();
+        refreshMap();
     }
 
     element.addEventListener("mouseover", handleMouseOver);
@@ -297,10 +300,12 @@ class Ship {
                 var stroke = "rgba(0, 255, 0, 0.1)";
             }
         } else {
-            if(showShips) {
+            if(this.isDestroyed()) {
+                var fill = "black";
+            } else if(showShips) {
                 var fill = "darkgrey";
-                var stroke = null;
             }
+            var stroke = null;
         }
 
         nullSelect(drawEllipse(tileToPixel(this.cx()+0.5), tileToPixel(this.cy()+0.5), w*tileSize/2-margin, h*tileSize/2-margin, fill, stroke));
@@ -327,13 +332,56 @@ class Ship {
         });
         return valid;
     }
+
+    isDestroyed() {
+        var destroyed = true;
+        this.points().forEach(p => {
+            if(shotMap[p[0]+p[1]*10] != "hit") {
+                destroyed = false;
+            }
+        })
+        return destroyed;
+    }
+
+    update() {
+        if(!this.isHologram && this.isDestroyed()) {
+            var previouslyDestroyed = true;
+            this.points().forEach(p => {
+                if(destroyedMap[pToI(p)] != "destroyed") { 
+                    destroyedMap[pToI(p)] = "destroyed";
+                    previouslyDestroyed = false
+                }
+            })
+
+            if(!previouslyDestroyed) {
+                console.log("ship len " + this.length + " is destroyed");
+            }
+        }
+    }
 }
 var ships = [];
+
+
+
+function xyToI(x, y) {
+    return x+y*10;
+}
+function pToI(p) {
+    return xyToI(p[0], p[1]);
+}
+
+function iToXy(i) {
+    return [
+        i % 10,
+        Math.floor(i / 10)
+    ]
+}
 
 
 // instead of [x][y] it is [x+y*10]
 var shipMap = [];
 var shotMap = [];
+var destroyedMap = [];
 
 // values are empty and ship
 for(let i=0; i<100; i++) {
@@ -343,6 +391,11 @@ for(let i=0; i<100; i++) {
 // values are empty, hit, and miss
 for(let i=0; i<100; i++) {
     shotMap.push("empty");
+}
+
+// values are empty and destroyed
+for(let i=0; i<100; i++) {
+    destroyedMap.push("empty");
 }
 
 
@@ -376,12 +429,83 @@ shipLengths.forEach(length => {
 
 function handleShotFired(x, y) {
     var outcome = "miss";
-    if(shipMap[x+y*10] == "ship") {
+    if(shipMap[xyToI(x, y)] == "ship") {
         outcome = "hit"
     }
-    shotMap[x+y*10] = outcome;
+    shotMap[xyToI(x, y)] = outcome;
+
+    ships.forEach(s => {
+        s.update();
+    });
+
     return outcome;
 }
+
+
+function addHologramShips() {
+    for(var x=0; x<10; x++) {
+        for(var y=0; y<10; y++) {
+            for(var r=0; r<2; r++) {
+                shipLengths.forEach(length => {
+                    var ship = new Ship(length, x, y, r);
+
+                    if(!ship.canPlaceOnMap(shotMap, ["empty", "hit"])) { return; }
+                    if(!ship.canPlaceOnMap(destroyedMap, ["empty"])) { return; }
+
+                    ship.isHologram = true;
+                    ships.push(ship);
+                });
+            }
+        }
+    }
+}
+
+function clearHologramShips() {
+    for(var i=ships.length-1; i>=0; i--) {
+        if(ships[i].isHologram) {
+            ships.splice(i, 1);
+        }
+    }
+}
+
+
+function getFreqMap() {
+    var freqMap = [];
+
+    for(let i=0; i<100; i++) {
+        freqMap.push(0);
+    }
+
+    ships.forEach(s => {
+        if(!s.isHologram) { return; }
+
+        var points = s.points();
+
+        var hitMultiplier = 1;
+        points.forEach(p => {
+            if(shotMap[pToI(p)] == "hit") {
+                hitMultiplier *= 10;
+            }
+
+            if(destroyedMap[pToI(p)] == "destroyed") {
+                hitMultiplier *= 0;
+            }
+        })
+
+        points.forEach(p => {
+            freqMap[pToI(p)] += hitMultiplier;
+        })
+    })
+
+    return freqMap;
+}
+
+
+
+
+
+
+
 
 
 
@@ -407,7 +531,7 @@ function drawMap() {
             let ry = tileToPixel(y);
             let cy = ry + tileSize/2;
 
-            if(false && shipMap[x+y*10] == "ship") {
+            if(false && shipMap[xyToI(x, y)] == "ship") {
                 var tile = drawRect(rx, ry, tileSize, tileSize, tileSelectedColor, "black", 1);
             } else {
                 var tile = drawRect(rx, ry, tileSize, tileSize, tileStandardColor, "black", 1);
@@ -448,28 +572,33 @@ function drawMap() {
             initPeg(peg, x, y);
         }
     }
-}
 
 
-function addHologramShips() {
-    for(var x=0; x<10; x++) {
-        for(var y=0; y<10; y++) {
-            for(var r=0; r<2; r++) {
-                shipLengths.forEach(length => {
-                    var ship = new Ship(length, x, y, r);
-                    if(!ship.canPlaceOnMap(shotMap, ["empty", "hit"])) { return; }
-                    ship.isHologram = true;
-                    ships.push(ship);
-                });
+    // frequency map
+
+    if(showFrequency) {
+
+        var freqMap = getFreqMap();
+
+        var highestFreq = 0;
+        for(let i=0; i<100; i++) {
+            if(freqMap[i] > highestFreq && shotMap[i] != "hit") {
+                highestFreq = freqMap[i];
             }
         }
-    }
-}
 
-function clearHologramShips() {
-    for(var i=ships.length-1; i>=0; i--) {
-        if(ships[i].isHologram) {
-            ships.splice(i, 1);
+        for(let i=0; i<100; i++) {
+            var x = i % 10;
+            var y = Math.floor(i / 10);
+
+            x = tileToPixel(x);
+            y = tileToPixel(y);
+
+            if(freqMap[i] == highestFreq) {
+                nullSelect(drawCircle(x + tileSize/2, y + tileSize/2, tileSize/2, "rgba(0, 0, 0, 0)", "red", tileSize/10));
+            }
+
+            nullSelect(drawText(freqMap[i], x, y + tileSize/4, "left", "center"));
         }
     }
 }
@@ -553,6 +682,7 @@ function test() {
 
 var showShips = false;
 var showPossibilities = false;
+var showFrequency = false;
 
 
 
@@ -561,10 +691,13 @@ var showPossibilities = false;
 
     <br/>
 
-    <button onclick="showShips = !showShips; refreshMap()">DEBUG show ships</button><br/>
+    <button onclick="showFrequency = !showFrequency; refreshMap()">show tile value</button>
     <button onclick="showPossibilities = !showPossibilities; refreshMap()">show possibilities</button>
 
     <br/><br/>
+    <button onclick="showShips = !showShips; refreshMap()">DEBUG show ships</button><br/>
+
+    <br/>
     <button onclick="test()">test</button>
     <div>hello world</div> <div>testing</div>
 </html>
