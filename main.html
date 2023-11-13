@@ -296,8 +296,8 @@ class Ship {
         var stroke = null;
         if(this.isHologram) {
             if(showPossibilities) {
-                var fill = "rgba(0, 255, 0, 0.01)";
-                var stroke = "rgba(0, 255, 0, 0.1)";
+                // var fill = "rgba(0, 255, 0, 0.01)";
+                var stroke = "rgba(255, 0, 0, 0.1)";
             }
         } else {
             if(this.isDestroyed()) {
@@ -612,6 +612,23 @@ function drawMap() {
     // frequency map
 
     if(showFrequency) {
+        var freqMap = getFreqMap();
+
+        for(var x=0; x<10; x++) {
+            let tx = tileToPixel(x);
+
+            for(let y=0; y<10; y++) {
+                let ty = tileToPixel(y) + tileSize/4;
+
+                nullSelect(drawText(freqMap[xyToI(x, y)], tx, ty, "left", "middle"));
+            }
+        }
+    }
+    
+
+    // show prediction
+
+    if(showBestMove) {
         getPredictions().forEach(i => {
             var x = i % 10;
             var y = Math.floor(i / 10);
@@ -730,6 +747,7 @@ function test() {
 var showShips = false;
 var showPossibilities = false;
 var showFrequency = false;
+var showBestMove = false;
 
 
 
@@ -738,14 +756,16 @@ var showFrequency = false;
 
     <br/>
 
-    <button onclick="showFrequency = !showFrequency; refreshMap()">show best move guess</button><br/>
+    <button onclick="showBestMove = !showBestMove; refreshMap()">show best move guess</button><br/>
+    <button onclick="showPossibilities = !showPossibilities; refreshMap()">show possible ship positions</button><br/>
+    <button onclick="showFrequency = !showFrequency; refreshMap()">show move values</button><br/>
 
     <br/>
     <button onclick="showShips = !showShips; refreshMap()">DEBUG show ships</button><br/>
-    <button onclick="showPossibilities = !showPossibilities; refreshMap()">DEBUG show possible ship positions</button><br/>
 
-    <br/>
+    <!-- <br/>
     <button onclick="test()">test</button>
-    <div>hello world</div> <div>testing</div>
+    <div>hello world</div> <div>testing</div> -->
+    <p>the prediction scales by 100 when hit</p>
 </html>
 
