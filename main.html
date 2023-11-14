@@ -10,6 +10,21 @@
             .border {
                 border: 3px solid #555;
             }
+            
+            /* .side-by-side {
+                display: inline-block;
+                width: 12%;
+                margin-right: 1%;
+            } */
+            
+            .container {
+                display: flex;
+            }
+
+            .side-by-side {
+                flex: 1;
+                margin-right: 10px;
+            }
 
             text {
                 user-select: none;
@@ -21,27 +36,59 @@
 	<body>
 
 
-        <h1>Battleship implemented by Eric Lewis</h1>
+        <h1>Battleship optimization algorithm</h1>
 
         <!-- <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> -->
 
+
+        <div class="container">
+
+            <div class="side-by-side">
+                <svg id="main-svg" width="450" height="450" class="border">
+
+                    <!-- <circle id="cir" cx="200" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow"></circle>
+
+                    <circle id="cir2" cx="200" cy="50" r="20" stroke="black" stroke-width="2" fill="red"></circle> -->
+
+                    <!-- <text x="50" y="50" text-anchor="middle">hello world!</text> -->
+
+                    <!-- <rect x="500" y="200" width="100" height="100" fill="blue">
+                        <circle cx="50" cy="75" r="30" fill="green"></circle>
+                    </rect> -->
+
+
+                </svg>
+            </div>
+
+            <div class="side-by-side">
+                <p id="tile-readout">Hover over a tile to calculate</p>
+                <p id="frequency-readout"></p>
+                <p id="probability-readout"></p>
+                <p id="total-frequency-readout"></p>
+                <p id="scaled-percentage-readout"></p>
+            </div>
+
+        </div>
         
 
-        <svg id="main-svg" width="800" height="500" class="border">
+        <br/>
 
-            <!-- <circle id="cir" cx="200" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow"></circle>
+        <button onclick="showBestMove = !showBestMove; refreshMap()">show best move guess</button><br/>
+        <button onclick="showProbabilityMap = !showProbabilityMap; refreshMap()">show probability map</button><br/>
 
-            <circle id="cir2" cx="200" cy="50" r="20" stroke="black" stroke-width="2" fill="red"></circle> -->
+        <br/>
 
-            <!-- <text x="50" y="50" text-anchor="middle">hello world!</text> -->
+        <button onclick="showPossibilities = !showPossibilities; refreshMap()">show possible ship positions</button><br/>
+        <button onclick="showFrequency = !showFrequency; refreshMap()">show move values</button><br/>
 
-            <!-- <rect x="500" y="200" width="100" height="100" fill="blue">
-                <circle cx="50" cy="75" r="30" fill="green"></circle>
-            </rect> -->
+        <br/>
+        <button onclick="showShips = !showShips; refreshMap()">DEBUG show ships</button><br/>
 
-
-        </svg>
-    
+        <!-- <br/>
+        <button onclick="test()">test</button>
+        <div>hello world</div> <div>testing</div> -->
+        <!-- <p>the prediction scales by 100 when hit</p> -->
+        
     </body>
 
     <script>
@@ -62,7 +109,7 @@ function clearMainSVG() {
 
 
 const tileSize = 40;
-const gridOffset = 75;
+const gridOffset = 30;
 
 const textOffset = gridOffset - tileSize/8;
 const fontSize = tileSize / 2;
@@ -187,14 +234,36 @@ function getTileDescriptor(x, y) {
     return letters[y] + (x+1)
 }
 
+function updateReadouts(x, y) {
+    var freqMap = getFreqMap();
+    var totalFreq = freqMap.reduce((sum, v) => sum + v, 0);
+
+    var freq = freqMap[xyToI(x, y)];
+    var prob = freq / totalFreq;
+
+    document.getElementById("tile-readout").textContent = "Tile: " + getTileDescriptor(x, y);
+    document.getElementById("frequency-readout").textContent = "Frequency: " + freq;
+    document.getElementById("probability-readout").textContent = "Probability: " + Number((prob*100).toFixed(3)) + "%";
+    document.getElementById("total-frequency-readout").textContent = "Total frequency: " + totalFreq;
+    document.getElementById("scaled-percentage-readout").textContent = "Scaled display percentage: " + Number((getTileScaledProbability(x, y)*100).toFixed(3)) + "%";
+}
+
 function initTile(element, x, y) {
     element.setAttribute("id", "tile-" + getTileDescriptor(x, y));
 
     function handleMouseOver() {
         element.setAttribute("fill", tileSelectedColor);
+
+        updateReadouts(x, y);
     }
     function handleMouseOut() {
-        element.setAttribute("fill", tileStandardColor);
+        if(showProbabilityMap) {
+            var c = getTileProbabilityColor(x, y);
+        } else {
+            var c = tileStandardColor;
+        }
+        
+        element.setAttribute("fill", c);
     }
     function handleClick() {
         // element.setAttribute("fill", "grey");
@@ -541,6 +610,23 @@ function getPredictions() {
 
 
 
+function getTileProbability(x, y) {
+    var freqMap = getFreqMap();
+    var totalFreq = freqMap.reduce((sum, v) => sum + v, 0);
+
+    var freq = freqMap[xyToI(x, y)];
+    var prob = freq / totalFreq;
+
+    return prob;
+}
+
+function getTileScaledProbability(x, y) {
+    return Math.pow(getTileProbability(x, y), 0.353785);
+}
+
+function getTileProbabilityColor(x, y) {
+    return "rgb(0, " + Math.floor(255 * getTileScaledProbability(x, y)) + ", 0)";
+}
 
 
 
@@ -566,11 +652,13 @@ function drawMap() {
             let ry = tileToPixel(y);
             let cy = ry + tileSize/2;
 
-            if(false && shipMap[xyToI(x, y)] == "ship") {
-                var tile = drawRect(rx, ry, tileSize, tileSize, tileSelectedColor, "black", 1);
+            if(showProbabilityMap) {
+                var c = getTileProbabilityColor(x, y);
             } else {
-                var tile = drawRect(rx, ry, tileSize, tileSize, tileStandardColor, "black", 1);
+                var c = tileStandardColor;
             }
+
+            var tile = drawRect(rx, ry, tileSize, tileSize, c, "black", 1);
 
             initTile(tile, x, y);
         }
@@ -649,7 +737,7 @@ function drawVictoryPopup() {
     var cx = w/2;
     var cy = h/2;
 
-    var sizeX = 400;
+    var sizeX = 350;
     var sizeY = 200;
 
     var moves = 0;
@@ -748,24 +836,12 @@ var showShips = false;
 var showPossibilities = false;
 var showFrequency = false;
 var showBestMove = false;
+var showProbabilityMap = false;
 
 
 
 
     </script>
-
-    <br/>
-
-    <button onclick="showBestMove = !showBestMove; refreshMap()">show best move guess</button><br/>
-    <button onclick="showPossibilities = !showPossibilities; refreshMap()">show possible ship positions</button><br/>
-    <button onclick="showFrequency = !showFrequency; refreshMap()">show move values</button><br/>
-
-    <br/>
-    <button onclick="showShips = !showShips; refreshMap()">DEBUG show ships</button><br/>
-
-    <!-- <br/>
-    <button onclick="test()">test</button>
-    <div>hello world</div> <div>testing</div> -->
-    <p>the prediction scales by 100 when hit</p>
+    
 </html>
 
